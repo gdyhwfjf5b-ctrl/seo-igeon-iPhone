@@ -218,7 +218,8 @@ function vRoom(c){const r=roomOf(KS.room),n=r.type==="group"?members(r).length+1
  inp.oninput=upd;inp.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing)send()};
  const send=()=>{const t=inp.value.trim();if(!t)return;r.msgs.push({w:"me",t,at:base()});inp.value="";refresh();$("kki")&&$("kki").focus();scheduleReply(r,t)};
  sd.onclick=send}
-function scheduleReply(r,txt){if(r.id==="me")return;if(r.type==="dm"&&person(r.id).ch)return;
+const NOREPLY=["c34"];   /* 답장·통화를 막을 사람 id (송정율 팀장님) */
+function scheduleReply(r,txt){if(r.id==="me")return;if(r.type==="dm"&&(person(r.id).ch||NOREPLY.includes(r.id)))return;
  const AL=r.type==="dm"?autoReplyFor(r.id,txt):null;   // 키워드 자동답변 (autoreply.js)
  if(AL)return playReplies(AL,l=>{r.msgs.push({w:r.id,t:l,at:base()});const here=state.cur==="appScreen"&&state.app==="kakao";
   if(here&&KS.room===r.id)refresh();else{r.unread=(r.unread||0)+1;if(here&&!KS.room&&!KS.profile)refresh()}});
@@ -227,7 +228,7 @@ function scheduleReply(r,txt){if(r.id==="me")return;if(r.type==="dm"&&person(r.i
  if(here&&KS.room===r.id)refresh();else{r.unread=(r.unread||0)+1;if(here&&!KS.room&&!KS.profile)refresh()}},1200+Math.random()*1600)}
 
 /* ---------- 보이스톡 / 페이스톡 ---------- */
-function startK(kind,id){const dev=$("device");dev.querySelector(".kcall")?.remove();
+function startK(kind,id){if(NOREPLY.includes(id)){showToast("이 기능은 지원하지 않아요");return}const dev=$("device");dev.querySelector(".kcall")?.remove();
  const r=roomOf(id),g=r&&r.type==="group",p=g?null:person(id),name=g?r.name:p.name,vid=kind==="video";
  CALLS.unshift({id,kind:vid?"video":"voice",res:"out",n:1,t:"방금 전"});
  const o=document.createElement("div");o.className="kcall "+(vid?"face":"voice");
