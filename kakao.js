@@ -61,7 +61,9 @@ const CHANNELS=[{"id": "ch1", "name": "스타일온", "e": "👕", "c": "#222428
 CHANNELS.forEach(c=>PEOPLE[c.id]={id:c.id,name:c.name,k:0,e:c.e,c:c.c,ch:1}); // 구독 채널
 
 /* 채팅방 */
-const ROOMS=ROOMS_SEED.map(r=>({...r,msgs:r.msgs.map(m=>({w:m.w,t:m.t,at:m.abs?new Date(m.abs):ago(...m._)}))}));
+const ROOMS=ROOMS_SEED.map(r=>({...r,msgs:r.msgs.map(m=>({w:m.w,t:m.t,u:m.u||0,at:m.abs?new Date(m.abs):ago(...m._)}))}));
+/* 송정율 팀장님: "생신 축하드립니다" 부터 내가 보낸 말은 전부 안 읽음(1) */
+{const r=ROOMS.find(x=>x.id==="c34"),i=r?r.msgs.findIndex(m=>m.w==="me"&&m.t.includes("생신 축하드립니다")):-1;if(i>=0)r.msgs.slice(i).forEach(m=>{if(m.w==="me")m.u=1})}
 const CALLS=CALLS_SEED.map(([id,kind,res,n,t])=>({id,kind,res,n,t}));
 const roomOf=id=>ROOMS.find(r=>r.id===id);
 const roomName=r=>r.type==="group"?r.name:person(r.id).name;
@@ -203,7 +205,7 @@ function vRoom(c){const r=roomOf(KS.room),n=r.type==="group"?members(r).length+1
   const showT=!nx||nx.w!==m.w||KT(nx.at)!==KT(m.at)||nx.at.toDateString()!==day,mine=m.w==="me",p=mine?ME:person(m.w);
   const f=!pv||pv.w!==m.w||pv.at.toDateString()!==day;
   const l=!nx||nx.w!==m.w||nx.at.toDateString()!==day;
-  if(mine)h+=`<div class="kk-m me ${f?"f":""} ${l?"l":""}">${showT?`<small>${KT(m.at)}</small>`:""}<span class="b">${E(m.t)}</span></div>`;
+  if(mine)h+=`<div class="kk-m me ${f?"f":""} ${l?"l":""}">${m.u||showT?`<div class="mt">${m.u?`<em class="un">${m.u}</em>`:""}${showT?`<small>${KT(m.at)}</small>`:""}</div>`:""}<span class="b">${E(m.t)}</span></div>`;
   else h+=`<div class="kk-m ot ${f?"f":""} ${l?"l":""}">${f?`<button class="av" data-p="${p.id}">${kav(p,36,.36)}</button>`:`<i class="av"></i>`}<div class="col">${f?`<em>${E(p.name)}</em>`:""}<div class="row"><span class="b">${E(m.t)}</span>${showT?`<small>${KT(m.at)}</small>`:""}</div></div></div>`});
  c.innerHTML=`<div class="kk room"><div class="kk-rh"><button id="krb" class="kg c">${ico("back",24,2.2,"#16202b")}</button><div class="tt" ${r.type==="dm"?`data-p="${r.id}"`:""}><b>${E(roomName(r))}</b>${n?`<b class="n">${n}</b>`:""}</div><div class="kg p"><button data-soon>${ico("search",24,1.9,"#16202b")}</button><button data-soon>${ico("menu",24,1.9,"#16202b")}</button></div></div>
  <div class="kk-rb" id="krbody">${h||DL(base())}</div>
@@ -216,16 +218,15 @@ function vRoom(c){const r=roomOf(KS.room),n=r.type==="group"?members(r).length+1
  c.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{KS.profile=b.dataset.p;refresh()});
  const inp=$("kki"),sd=$("ksd"),upd=()=>{const t=inp.value.trim();sd.classList.toggle("on",!!t);sd.innerHTML=t?ico("up",20,2.5,"#1b1b1d"):SMI(22)};
  inp.oninput=upd;inp.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing)send()};
- const send=()=>{const t=inp.value.trim();if(!t)return;r.msgs.push({w:"me",t,at:base()});inp.value="";refresh();$("kki")&&$("kki").focus();scheduleReply(r,t)};
+ const send=()=>{const t=inp.value.trim();if(!t)return;r.msgs.push({w:"me",t,u:r.type==="group"?r.members.length:1,at:base()});inp.value="";refresh();$("kki")&&$("kki").focus();scheduleReply(r,t)};
  sd.onclick=send}
 const NOREPLY=["c34"];   /* 답장·통화를 막을 사람 id (송정율 팀장님) */
+const markRead=r=>r.msgs.forEach(m=>{if(m.w==="me")m.u=0});
 function scheduleReply(r,txt){if(r.id==="me")return;if(r.type==="dm"&&(person(r.id).ch||NOREPLY.includes(r.id)))return;
  const AL=r.type==="dm"?autoReplyFor(r.id,txt):null;   // 키워드 자동답변 (autoreply.js)
- if(AL)return playReplies(AL,l=>{r.msgs.push({w:r.id,t:l,at:base()});const here=state.cur==="appScreen"&&state.app==="kakao";
+ if(AL)return playReplies(AL,l=>{markRead(r);r.msgs.push({w:r.id,t:l,at:base()});const here=state.cur==="appScreen"&&state.app==="kakao";
   if(here&&KS.room===r.id)refresh();else{r.unread=(r.unread||0)+1;if(here&&!KS.room&&!KS.profile)refresh()}});
- setTimeout(()=>{const who=r.type==="group"?r.members[Math.floor(Math.random()*r.members.length)]:r.id,pool=REPLY[who]||REPLY._,t=pool[Math.floor(Math.random()*pool.length)];
- r.msgs.push({w:who,t,at:base()});const here=state.cur==="appScreen"&&state.app==="kakao";
- if(here&&KS.room===r.id)refresh();else{r.unread=(r.unread||0)+1;if(here&&!KS.room&&!KS.profile)refresh()}},1200+Math.random()*1600)}
+}
 
 /* ---------- 보이스톡 / 페이스톡 ---------- */
 function startK(kind,id){if(NOREPLY.includes(id)){showToast("이 기능은 지원하지 않아요");return}const dev=$("device");dev.querySelector(".kcall")?.remove();

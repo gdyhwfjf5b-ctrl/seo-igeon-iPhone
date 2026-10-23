@@ -122,3 +122,6 @@
 /* 채팅방 스크롤 안정화: flex 대신 일반 블록 + 터치 스크롤 */
 .kk-rb{display:block!important;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain}
 .kk-rb .kk-dt{display:flex;justify-content:center;align-self:auto}
+
+.kk-m .mt{display:flex;flex-direction:column;align-items:flex-end;flex:none;line-height:1.2}
+.kk-m .un{font-style:normal;font-size:13px;font-weight:800;line-height:1;color:#f5b400;margin-bottom:1px}
